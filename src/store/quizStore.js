@@ -96,8 +96,19 @@ const useQuizStore = create((set) => ({
         if (isCorrect) {
           marksAwarded = questionMarks;
         } else if (isAttempted) {
-          // Negative marking: deduct 1/3 of the marks for wrong answer
-          marksAwarded = -(questionMarks / 3);
+          // Negative marking logic:
+          // - MCQ (single correct answer): deduct 1/3 of marks for wrong answer
+          // - MSQ (multiple correct answers): 0 marks for wrong answer (no negative)
+          // - NAT (numerical): deduct 1/3 of marks for wrong answer
+          const isMSQ = Array.isArray(correctAnswer);
+          
+          if (isMSQ) {
+            // MSQ: No negative marking, just 0 marks
+            marksAwarded = 0;
+          } else {
+            // MCQ or NAT: Negative marking of 1/3
+            marksAwarded = -(questionMarks / 3);
+          }
         }
         // If not attempted, marksAwarded remains 0
         
