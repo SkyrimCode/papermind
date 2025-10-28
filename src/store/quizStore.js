@@ -55,12 +55,14 @@ const useQuizStore = create((set) => ({
   results: null,
   timerDuration: 120, // Default 2 minutes in seconds
   currentQuizId: null, // Track which quiz is being taken
+  currentQuizName: '', // Track quiz/paper name
   
   // Actions
   setQuestions: (questions) => set({ questions }),
   setSolutions: (solutions) => set({ solutions }),
   setTimerDuration: (duration) => set({ timerDuration: duration }),
   setCurrentQuizId: (quizId) => set({ currentQuizId: quizId }),
+  setCurrentQuizName: (name) => set({ currentQuizName: name }),
   setUserAnswer: (questionId, answer) =>
     set((state) => ({
       userAnswers: { ...state.userAnswers, [questionId]: answer },
@@ -97,16 +99,17 @@ const useQuizStore = create((set) => ({
           marksAwarded = questionMarks;
         } else if (isAttempted) {
           // Negative marking logic:
-          // - MCQ (single correct answer): deduct 1/3 of marks for wrong answer
-          // - MSQ (multiple correct answers): 0 marks for wrong answer (no negative)
-          // - NAT (numerical): deduct 1/3 of marks for wrong answer
+          // - MCQ (single correct answer, string/single letter): deduct 1/3 of marks for wrong answer
+          // - MSQ (multiple correct answers, array): 0 marks for wrong answer (no negative)
+          // - NAT (numerical answer type): 0 marks for wrong answer (no negative)
           const isMSQ = Array.isArray(correctAnswer);
+          const isNAT = question.type === 'NAT';
           
-          if (isMSQ) {
-            // MSQ: No negative marking, just 0 marks
+          if (isMSQ || isNAT) {
+            // MSQ or NAT: No negative marking, just 0 marks
             marksAwarded = 0;
           } else {
-            // MCQ or NAT: Negative marking of 1/3
+            // MCQ: Negative marking of 1/3
             marksAwarded = -(questionMarks / 3);
           }
         }
@@ -157,6 +160,7 @@ const useQuizStore = create((set) => ({
       results: null,
       timerDuration: 120, // Reset to default
       currentQuizId: null,
+      currentQuizName: '',
     }),
 }));
 

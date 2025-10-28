@@ -23,6 +23,9 @@ const ResultsPage = () => {
     const saveAttempt = async () => {
       if (isQuizSubmitted && score && user && currentQuizId) {
         try {
+          // Get violation count from localStorage
+          const violationCount = parseInt(localStorage.getItem('quizViolationCount') || '0', 10);
+          
           await addDoc(collection(db, 'attempts'), {
             userId: user.uid,
             userName: user.displayName,
@@ -36,9 +39,13 @@ const ResultsPage = () => {
               totalMarks: score.totalMarks,
               percentage: parseFloat(score.percentage),
             },
+            violations: violationCount,
             status: 'completed',
             attemptedAt: new Date().toISOString(),
           });
+          
+          // Clear violation count after saving
+          localStorage.removeItem('quizViolationCount');
         } catch {
           // Error saving attempt
         }

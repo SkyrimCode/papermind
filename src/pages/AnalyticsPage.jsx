@@ -3,7 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { TrendingUp, Award, Target, Calendar, Loader, Users, Eye } from 'lucide-react';
+import { TrendingUp, Award, Target, Calendar, Loader, Users } from 'lucide-react';
 import CustomSelect from '../components/CustomSelect';
 
 const AnalyticsPage = () => {
@@ -323,7 +323,18 @@ const AnalyticsPage = () => {
               {attempts.map((attempt, index) => {
                 const quiz = quizzes[attempt.quizId];
                 return (
-                  <div key={attempt.id} className="attempt-history-card">
+                  <div 
+                    key={attempt.id} 
+                    className="attempt-history-card clickable"
+                    onClick={() => navigate(`/view-results/${attempt.id}`)}
+                    role="button"
+                    tabIndex={0}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        navigate(`/view-results/${attempt.id}`);
+                      }
+                    }}
+                  >
                     <div className="attempt-number">#{attempts.length - index}</div>
                     <div className="attempt-details">
                       <h3>{quiz?.title || 'Unknown Quiz'}</h3>
@@ -354,14 +365,6 @@ const AnalyticsPage = () => {
                           <span className="value correct">{attempt.score.correct}</span>
                         </div>
                       </div>
-                      <button
-                        className="view-results-btn-small"
-                        onClick={() => navigate(`/view-results/${attempt.id}`)}
-                        title="View detailed results"
-                      >
-                        <Eye size={16} />
-                        View Details
-                      </button>
                     </div>
                     <div 
                       className="attempt-percentage"

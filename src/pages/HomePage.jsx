@@ -13,7 +13,7 @@ import { TABS } from '../utils/constants';
 const HomePage = () => {
   const { user, isAdmin } = useAuth();
   const navigate = useNavigate();
-  const { setQuestions, setSolutions, setTimerDuration, setCurrentQuizId, startQuiz } = useQuizStore();
+  const { setQuestions, setSolutions, setTimerDuration, setCurrentQuizId, setCurrentQuizName, startQuiz } = useQuizStore();
   const [quizzes, setQuizzes] = useState([]);
   const [attemptedQuizIds, setAttemptedQuizIds] = useState(new Set());
   const [loading, setLoading] = useState(true);
@@ -103,6 +103,7 @@ const HomePage = () => {
     setSolutions(quiz.solutions);
     setTimerDuration(quiz.duration * 60);
     setCurrentQuizId(quiz.id);
+    setCurrentQuizName(quiz.title || 'Quiz Exam');
     startQuiz();
     navigate('/quiz');
   };

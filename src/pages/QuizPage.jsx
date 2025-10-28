@@ -18,6 +18,7 @@ const QuizPage = () => {
     isQuizStarted,
     timerDuration,
     currentQuizId,
+    currentQuizName,
     setUserAnswer,
     submitQuiz,
     calculateScore,
@@ -27,12 +28,92 @@ const QuizPage = () => {
   const [showWarning, setShowWarning] = useState(false);
   const [showBackModal, setShowBackModal] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [tabSwitchCount, setTabSwitchCount] = useState(0);
+  const [showTabWarning, setShowTabWarning] = useState(false);
+  const [showFullscreenPrompt, setShowFullscreenPrompt] = useState(false);
 
   useEffect(() => {
     if (!isQuizStarted || questions.length === 0) {
       navigate('/');
     }
   }, [isQuizStarted, questions, navigate]);
+
+  // Enter fullscreen mode when quiz starts
+  useEffect(() => {
+    const enterFullscreen = async () => {
+      try {
+        const elem = document.documentElement;
+        if (elem.requestFullscreen) {
+          await elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { // Safari
+          await elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { // IE11
+          await elem.msRequestFullscreen();
+        }
+      } catch (error) {
+        console.error('Error entering fullscreen:', error);
+      }
+    };
+
+    enterFullscreen();
+
+    // Monitor fullscreen changes
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement && 
+          !document.webkitFullscreenElement && 
+          !document.msFullscreenElement) {
+        // User exited fullscreen - show prompt to re-enter
+        setShowFullscreenPrompt(true);
+        setTabSwitchCount(prev => prev + 1);
+      } else {
+        setShowFullscreenPrompt(false);
+      }
+    };
+
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    document.addEventListener('webkitfullscreenchange', handleFullscreenChange);
+    document.addEventListener('MSFullscreenChange', handleFullscreenChange);
+
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+      document.removeEventListener('webkitfullscreenchange', handleFullscreenChange);
+      document.removeEventListener('MSFullscreenChange', handleFullscreenChange);
+      
+      // Exit fullscreen on unmount
+      if (document.fullscreenElement || document.webkitFullscreenElement) {
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        }
+      }
+    };
+  }, []);
+
+  // Detect tab switching and visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        setTabSwitchCount(prev => prev + 1);
+        setShowTabWarning(true);
+        setTimeout(() => setShowTabWarning(false), 3000);
+      }
+    };
+
+    const handleBlur = () => {
+      setTabSwitchCount(prev => prev + 1);
+      setShowTabWarning(true);
+      setTimeout(() => setShowTabWarning(false), 3000);
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
 
   // Handle browser back button
   useEffect(() => {
@@ -88,6 +169,8 @@ const QuizPage = () => {
   const handleSubmit = () => {
     calculateScore();
     submitQuiz();
+    // Store violation count in localStorage to be saved with attempt
+    localStorage.setItem('quizViolationCount', tabSwitchCount.toString());
     navigate('/results');
   };
 
@@ -124,6 +207,21 @@ const QuizPage = () => {
   const answeredCount = Object.keys(userAnswers).length;
   const totalQuestions = questions.length;
 
+  const handleReenterFullscreen = async () => {
+    try {
+      const elem = document.documentElement;
+      if (elem.requestFullscreen) {
+        await elem.requestFullscreen();
+      } else if (elem.webkitRequestFullscreen) {
+        await elem.webkitRequestFullscreen();
+      } else if (elem.msRequestFullscreen) {
+        await elem.msRequestFullscreen();
+      }
+    } catch (error) {
+      console.error('Error re-entering fullscreen:', error);
+    }
+  };
+
   return (
     <div className="page-container quiz-page-container">
       {showWarning && (
@@ -132,15 +230,45 @@ const QuizPage = () => {
           <span>Only 1 minute remaining!</span>
         </div>
       )}
+
+      {showTabWarning && (
+        <div className="tab-switch-warning">
+          <AlertTriangle size={20} />
+          <span>⚠️ Warning: Tab switching detected! ({tabSwitchCount} violations)</span>
+        </div>
+      )}
+
+      {showFullscreenPrompt && (
+        <div className="fullscreen-prompt-overlay">
+          <div className="fullscreen-prompt">
+            <AlertTriangle size={48} color="#ef4444" />
+            <h2>⚠️ Fullscreen Mode Required</h2>
+            <p>You have exited fullscreen mode. This has been recorded as a violation.</p>
+            <p className="violation-count">Violations: {tabSwitchCount}</p>
+            <button 
+              className="fullscreen-reenter-button"
+              onClick={handleReenterFullscreen}
+            >
+              Return to Fullscreen Mode
+            </button>
+            <p className="warning-note">You must return to fullscreen to continue the exam</p>
+          </div>
+        </div>
+      )}
       
       <div className="quiz-content">
         <div className="timer-display">
           <Clock size={16} />
           <span>{formatTime(timeLeft)}</span>
+          {tabSwitchCount > 0 && (
+            <span className="violation-badge">
+              ⚠️ {tabSwitchCount}
+            </span>
+          )}
         </div>
         
         <div className="quiz-header">
-          <h1>Quiz Exam</h1>
+          <h1>{currentQuizName || 'Quiz Exam'}</h1>
           <div className="quiz-stats">
             <div className="stat">
               <CheckCircle size={20} />

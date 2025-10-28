@@ -179,6 +179,14 @@ const ViewResultsPage = () => {
               <span className="label">Total Questions:</span>
               <span className="value">{attempt.score.total}</span>
             </div>
+            {isAdmin() && (
+              <div className="score-item violation-item">
+                <span className="label">Violations:</span>
+                <span className={`value ${attempt.violations > 0 ? 'violation-warning' : ''}`}>
+                  {attempt.violations || 0} {attempt.violations > 0 && '⚠️'}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

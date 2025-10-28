@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { collection, getDocs, query, orderBy } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { ClipboardList, User, Calendar, Award, Loader, Eye } from 'lucide-react';
+import { ClipboardList, User, Calendar, Award, Loader } from 'lucide-react';
 import { getGradeColor, GRADE_COLORS } from '../utils/constants';
 
 const AttemptsPage = () => {
@@ -103,7 +103,19 @@ const AttemptsPage = () => {
         ) : (
           <div className="attempts-list">
             {filteredAttempts.map((attempt) => (
-              <div key={attempt.id} className="attempt-card">
+              <div 
+                key={attempt.id} 
+                className={`attempt-card ${attempt.status === 'completed' ? 'clickable' : ''}`}
+                onClick={() => attempt.status === 'completed' && navigate(`/view-results/${attempt.id}`)}
+                role={attempt.status === 'completed' ? 'button' : undefined}
+                tabIndex={attempt.status === 'completed' ? 0 : undefined}
+                onKeyPress={(e) => {
+                  if (attempt.status === 'completed' && (e.key === 'Enter' || e.key === ' ')) {
+                    navigate(`/view-results/${attempt.id}`);
+                  }
+                }}
+                style={{ cursor: attempt.status === 'completed' ? 'pointer' : 'default' }}
+              >
                 <div className="attempt-header">
                   <div className="attempt-user">
                     <User size={20} />
@@ -133,16 +145,6 @@ const AttemptsPage = () => {
                         : `${attempt.score.percentage.toFixed(1)}%`
                       }
                     </div>
-                    {attempt.status === 'completed' && (
-                      <button
-                        className="view-results-btn"
-                        onClick={() => navigate(`/view-results/${attempt.id}`)}
-                        title="View detailed results"
-                      >
-                        <Eye size={18} />
-                        View Results
-                      </button>
-                    )}
                   </div>
                 </div>
                 
